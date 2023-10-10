@@ -1,0 +1,1 @@
+{"subject":"subject3","version":1,"id":3,"schema":"{\"type\":\"record\",\"name\":\"Schema3\",\"namespace\":\"example\",\"fields\":[{\"name\":\"schema3Name\",\"type\":\"string\"},{\"name\":\"schema3Age\",\"type\":\"int\"}]}"}

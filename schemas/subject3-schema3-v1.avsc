@@ -1,0 +1,9 @@
+{
+   "type" : "record",
+   "namespace" : "example",
+   "name" : "Schema3",
+   "fields" : [
+      { "name" : "schema3Name" , "type" : "string" },
+      { "name" : "schema3Age" , "type" : "int" }
+   ]
+}

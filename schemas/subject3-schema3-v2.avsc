@@ -1,0 +1,17 @@
+{
+   "type" : "record",
+   "namespace" : "example",
+   "name" : "Schema3",
+   "fields" : [
+      { "name" : "schema3Name" , "type" : "string" },
+      { "name" : "schema3Age" , "type" : "int" },
+      { 
+         "name" : "schame3NewOptionalField", 
+         "type" : [
+            "null",
+            "int"
+         ],
+         "default": null
+       }
+   ]
+}

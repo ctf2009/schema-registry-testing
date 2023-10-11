@@ -1,17 +1,15 @@
 import requests
 import sys
 import os
+import re
 
 def get_subjects_list(url, username=None, password=None):
-    # Define the API endpoint for getting the list of subjects
     api_url = f"{url}/subjects"
-
-    # Prepare authentication if username and password are provided
     auth = None
+
     if username and password:
         auth = (username, password)
 
-    # Make a GET request with optional basic authentication
     response = requests.get(api_url, auth=auth)
 
     if response.status_code == 200:
@@ -21,14 +19,37 @@ def get_subjects_list(url, username=None, password=None):
         print(f"Failed to retrieve subjects. Status code: {response.status_code}")
         return None
 
-def save_schema_to_file(export_folder, subject, version, schema):
-    folder_name = os.path.join(export_folder, subject)
-    file_name = f"{subject}-{version}.json"
-    if not os.path.exists(folder_name):
-        os.makedirs(folder_name)
+def extract_subject_base(subject):
+    parts = subject.split(':')
+    last_part = parts[-1]
+    return last_part
 
-    with open(os.path.join(folder_name, file_name), 'w') as file:
+def get_context(subject):
+    match = re.match(r":\.(.+?):", subject)
+    if match:
+        return match.group(1)
+    else:
+        return None
+
+def save_schema_to_file(filepath, schema):
+    dirs =  os.path.dirname(filepath)
+
+    if not os.path.exists(dirs):
+        os.makedirs(dirs)
+
+    with open(filepath, 'w') as file:
         file.write(schema)
+
+
+def build_subject_folder_name(export_folder, subject):
+    base_subject = extract_subject_base(subject)
+    context = get_context(subject)
+
+    if context:
+        context_path = context.split(".")
+        return os.path.join(export_folder, *context_path, base_subject)
+    else:
+        return  os.path.join(export_folder, "default", base_subject)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2 or len(sys.argv) > 5:
@@ -38,7 +59,7 @@ if __name__ == "__main__":
     url = sys.argv[1]
     username = sys.argv[2] if len(sys.argv) >= 3 else None
     password = sys.argv[3] if len(sys.argv) >= 4 else None
-    export_folder = "export"  # Default export folder
+    export_folder = "export"
 
     if "--export" in sys.argv:
         export_index = sys.argv.index("--export")
@@ -50,7 +71,7 @@ if __name__ == "__main__":
 
     if subjects:
         for subject in subjects:
-            print(f"Processing subject: {subject}")
+            print(f"\nProcessing subject: {subject}")
             versions_url = f"{url}/subjects/{subject}/versions"
             versions_response = requests.get(versions_url, auth=(username, password))
 
@@ -63,8 +84,9 @@ if __name__ == "__main__":
                     schema_response = requests.get(schema_url, auth=(username, password))
                     if schema_response.status_code == 200:
                         schema = schema_response.text
-                        save_schema_to_file(export_folder, subject, version, schema)
-                        print(f"Saved version {version} to {export_folder}/{subject}/{version}.json")
+                        filepath = os.path.join(build_subject_folder_name(export_folder, subject), f"{version}.json")
+                        save_schema_to_file(filepath, schema)
+                        print(f"Saved version {version} to {filepath}")
                     else:
                        print(f"Failed to retrieve schema for version {version}. Status code: {schema_response.status_code}")
             else:

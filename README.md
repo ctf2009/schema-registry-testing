@@ -33,7 +33,7 @@ In this scenario, we will first populate Schema Registry 1 with some schemas. We
 From the root of this repository you can run
 
 ```
-./scripts/load-schemas.sh --all --folder schemas --registry http://localhost:8081
+sh ./scripts/load-schemas.sh --all --folder schemas --registry http://localhost:8081
 ```
 
 You should get some output similar to the below

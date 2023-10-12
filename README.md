@@ -83,7 +83,7 @@ docker run --rm --network=host confluentinc/cp-kafka:7.3.5 /usr/bin/kafka-topics
 
 ### Upload a single schema using Curl
 ```
-cat schemas/subject2-v1.avsc  | \
+cat schemas/subject1-v1.avsc | \
 jq -c '. | { schema: . | @json }' | \
 curl -s -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" --data-binary @- http://localhost:8081/subjects/subject1/versions | jq
 ```
@@ -112,7 +112,7 @@ curl -s http://localhost:8081/contexts | jq
 ```
 curl -s http://localhost:8081/subjects?subjectPrefix=":.my-context:" | jq
 [
-  ":.my-context:subject2"
+  ":.my-context:subject1"
 ]
 ```
 
@@ -121,9 +121,8 @@ curl -s http://localhost:8081/subjects?subjectPrefix=":.my-context:" | jq
 ```
 curl -s http://localhost:8081/subjects?subjectPrefix=":*:" | jq
 [
-  ":.my-context:subject2",
+  ":.my-context:subject1",
   "subject1",
-  "subject2",
   "subject3"
 ]
 ```

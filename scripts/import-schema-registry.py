@@ -1,17 +1,11 @@
 import requests
 import sys
 import os
+import json
 
 def read_schema_from_file(file_path):
     with open(file_path, 'r') as file:
-        return file.read()
-
-#def get_subject_from_path(file_path):
-#    return os.path.basename(os.path.dirname(file_path))
-#
-#def get_version_from_path(file_path):
-#    return os.path.splitext(os.path.basename(file_path))[0]
-#
+        return json.load(file)
 
 def put_subject_into_mode(url, username, password, subject, mode):
     mode_url = f"{url}/mode/{subject}"
@@ -21,33 +15,10 @@ def put_subject_into_mode(url, username, password, subject, mode):
 
     return requests.put(mode_url, auth=(username, password), headers={"Content-Type": "application/json"}, json=data)
 
-def registry_has_subjects(url, username, password):
-    subjects_url = f"{url}/subjects"
-    response = requests.get(subjects_url, auth=(username, password))
-    return response.status_code == 200 and len(response.json()) > 0
-
-def send_schema_to_registry(url, username, password, schema, subject, context=None):
+def send_schema_to_registry(url, username, password, subject, payload_data):
     headers = {"Content-Type": "application/vnd.schemaregistry.v1+json"}
 
-    if context:
-        subject_url = f"{url}/subjects/{context}"
-        data = {"schema": schema}
-    else:
-        subject_url = f"{url}/subjects/{subject}"
-        data = {"schema": schema}
-
-
-    print(f"url is {url}")
-    print(f"subject is {subject}")
-    print(f"context is {context}")
-    print(f"schema is {schema}")
-
-    #response = requests.post(subject_url, headers=headers, data=data, auth=(username, password))
-
-    #if response.status_code == 200:
-    #    print(f"Imported schema for subject: {subject}")
-    #else:
-    #    print(f"Failed to import schema for subject: {subject}. Status code: {response.status_code}")
+    #TODO: Complete this
 
 def get_import_files(import_folder):
     files = []
@@ -95,7 +66,7 @@ def get_subjects_list(url, username=None, password=None):
         return None
 
 def verify_import_against_existing_subjects(url, username, password, fully_qualified_subjects, force):
-    print("\nVerifying existing subjects in registry")
+    print("\n- Verifying existing subjects in registry")
 
     existing_subjects = get_subjects_list(url, username, password)
     print(f"\tExisting Subjects in Target Registry: {existing_subjects}")
@@ -115,42 +86,40 @@ def verify_import_against_existing_subjects(url, username, password, fully_quali
 
     print("\tVerification complete")
 
-def import_schemas_to_registry(url, username, password, import_folder, force):
-    if force:
-        user_input = input("The --force flag has been provided. To continue you must type 'Y' to confirm you understand the risks associated with this operation: ")
+def process_subjects(url, username, password, subjects_by_path):
+    print("\n- Processing Subjects")
+    for subject_path, subject in subjects_by_path.items():
+        print(f"\tProcessing Subject {subject} with path {subject_path}")
+        print(f"\t\tAttempting to put {subject} into IMPORT mode")
+        response = put_subject_into_mode(url, username, password, subject, "IMPORT")
+        if response.status_code == 200:
+            print(f"\t\tSubject: {subject} is now in INPORT mode")
+            for filename in sorted(os.listdir(subject_path)):
+                full_path = os.path.join(subject_path, filename)
+                if (os.path.isfile(full_path)):
+                    print(f"\t\t\t- Processing file {full_path}")
+                    schema = read_schema_from_file(full_path)
+                    if "subject" in schema:
+                        del schema["subject"]
 
-        if user_input.upper() == "Y":
-            print("Continuing...")
+                    payload_data = json.dumps(schema)
+                    #send_schema_to_registry(url, username, password, subject, payload_data)
+
+            print(f"\t\tReturning {subject} into READWRITE mode")
+            response = put_subject_into_mode(url, username, password, subject, "READWRITE")
+            if response.status_code != 200:
+                print(f"\t\tUnable to transition Subject: {subject} to READWRITE mode")
         else:
-            print("Exiting...")
-            exit()
+            print(f"\t\tUnable to put subject {subject} into IMPORT mode. Not importing this subject")
+        print("\n")
+
+def import_schemas_to_registry(url, username, password, import_folder, force):
 
     subject_paths = get_subject_paths(os.path.join(import_folder))
     subjects_by_path = get_subjects_by_subject_path(subject_paths)
 
     verify_import_against_existing_subjects(url, username, password, list(subjects_by_path.values()), force)
-    
-   #for file_path in files:
-
-   #    print(f"\nProcessing File Path: {file_path}")
-   #    context = get_context_from_path(file_path)
-   #    subject = get_subject_from_path(file_path)
-   #    version = get_version_from_path(file_path)
-
-   #    #print(f"Derived Context is {context}")
-        #print(f"Derived Subject is {subject}")
-        #print(f"Derived Version is {version}")
-#
-        ## Check if the subject exists in the registry
-        #subject_url = f"{url}/subjects/{subject}/versions"
-        #response = requests.get(subject_url, auth=(username, password))
-#
-        #if response.status_code == 404 or force:
-        #    # Subject doesn't exist or force flag is set
-        #    schema = read_schema_from_file(file_path)
-        #    send_schema_to_registry(url, username, password, schema, subject, context)
-        #elif not force:
-        #    print(f"Subject {subject} already exists with version. Use --force flag to override or provide an additional context")
+    process_subjects(url, username, password, subjects_by_path)
 
 if __name__ == "__main__":
     if len(sys.argv) < 4 or len(sys.argv) > 6:
@@ -174,5 +143,14 @@ if __name__ == "__main__":
     if not import_folder:
         print("Please provide the --import-folder parameter.")
         sys.exit(1)
+
+    if force:
+        user_input = input("The --force flag has been provided. To continue you must type 'Y' to confirm you understand the risks associated with this operation: ")
+
+        if user_input.upper() == "Y":
+            print("Continuing...")
+        else:
+            print("Exiting...")
+            exit()
 
     import_schemas_to_registry(url, username, password, import_folder, force)

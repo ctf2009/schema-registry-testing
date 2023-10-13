@@ -92,7 +92,7 @@ curl -s -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" --data
 In this instance, we are adding the schema to a context names "my-context"
 
 ```
-cat schemas/subject2-schema.avsc | \
+cat schemas/subject2-v1.avsc | \
 jq -c '. | { schema: . | @json }' | \
 curl -s -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" --data-binary @- "http://localhost:8081/subjects/:.my-context:subject2/versions" | jq
 ```

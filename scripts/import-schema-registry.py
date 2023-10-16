@@ -130,8 +130,8 @@ if __name__ == "__main__":
     import_folder = args.import_folder
     import_context = args.import_context
 
-    existing_subjects = get_existing_contexts(url, username, password)
-    if len(existing_subjects) > 1 and import_context == None:
+    existing_subjects = get_existing_subjects(url, username, password)
+    if existing_subjects and import_context == None:
         print("The target schema registry contains subjects and no import context has been provided")
         print("In order to prevent any unintended overwrites, if subjects already exist in a target registry, you must provide an import context using --import-context")
         print("Please note that the import context you provide must not already exist in the target registry")

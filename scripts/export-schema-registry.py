@@ -47,7 +47,7 @@ def build_subject_folder_name(export_folder, subject):
 
     if context:
         context_path = context.split(".")
-        return os.path.join(export_folder, "contexts" *context_path, base_subject)
+        return os.path.join(export_folder, "contexts", *context_path, base_subject)
     else:
         return  os.path.join(export_folder, "default", base_subject)
 

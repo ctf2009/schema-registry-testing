@@ -33,7 +33,7 @@ In this scenario, we will first populate Schema Registry 1 with some schemas. We
 From the root of this repository you can run
 
 ```
-sh ./scripts/load-schemas.sh --all --folder schemas --registry http://localhost:8081
+sh ./scripts/load-schemas.sh --all --folder schemas/scenario_1 --registry http://localhost:8081
 ```
 
 You should get some output similar to the below
@@ -83,16 +83,16 @@ docker run --rm --network=host confluentinc/cp-kafka:7.3.5 /usr/bin/kafka-topics
 
 ### Upload a single schema using Curl
 ```
-cat schemas/subject1-v1.avsc | \
+cat schemas/scenario_1/subject1-v1.avsc | \
 jq -c '. | { schema: . | @json }' | \
 curl -s -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" --data-binary @- http://localhost:8081/subjects/subject1/versions | jq
 ```
 
 ### Upload a single schemas using Curl with a context applied
-In this instance, we are adding the schema to a context names "my-context"
+In this instance, we are adding the schema to a context named "my-context"
 
 ```
-cat schemas/subject2-v1.avsc | \
+cat schemas/scenario_1/subject2-v1.avsc | \
 jq -c '. | { schema: . | @json }' | \
 curl -s -X POST -H "Content-Type: application/vnd.schemaregistry.v1+json" --data-binary @- "http://localhost:8081/subjects/:.my-context:subject2/versions" | jq
 ```

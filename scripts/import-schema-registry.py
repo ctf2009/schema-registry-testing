@@ -19,7 +19,7 @@ def put_subject_into_mode(url, username, password, subject, mode, indent = ""):
     }
     response = requests.put(mode_url, auth=(username, password), headers={"Content-Type": "application/json"}, json=data)
     if response.status_code == 200:
-        print(f"{indent}Subject: {subject} is now in {mode}")
+        print(f"{indent}Subject: {subject} is now in {mode} mode")
         return True
     else: 
         print(f"{indent}Unable to put Subject: {subject} into mode {mode}")
@@ -27,7 +27,11 @@ def put_subject_into_mode(url, username, password, subject, mode, indent = ""):
 
 def send_schema_to_registry(url, username, password, subject, payload_data):
     headers = {"Content-Type": "application/vnd.schemaregistry.v1+json"}
+   
+    print(payload_data)
     #TODO: Complete this
+
+
 
 def get_subject_paths(directory):
     fully_qualified_subjects = set()
@@ -81,15 +85,15 @@ def get_existing_contexts(url, username=None, password=None):
 
 def process_subject(url, username, password, subject_path, subject, indent = ""):
     print(f"{indent}Attempting to put {subject} into IMPORT mode")
-    if put_subject_into_mode(url, username, password, subject, "IMPORT", indent + "\t"):
+    if put_subject_into_mode(url, username, password, subject, "IMPORT", indent):
         for filename in sorted(os.listdir(subject_path)):
             full_path = os.path.join(subject_path, filename)
             if (os.path.isfile(full_path)):
-                print(f"{indent}\t\t- Processing file {full_path}")
+                print(f"{indent}\t- Processing file {full_path}")
                 payload_data = json.dumps(read_schema_from_file(full_path))
                 send_schema_to_registry(url, username, password, subject, payload_data)    
     
-        put_subject_into_mode(url, username, password, subject, "READWRITE", indent + "\t")
+        put_subject_into_mode(url, username, password, subject, "READWRITE", indent)
         return "IMPORTED"
     else:
         print(f"{indent}*** Unable to put subject {subject} into IMPORT mode. Not importing this subject ***")

@@ -78,7 +78,7 @@ In order to do this there are some initial steps that need to be performed
 
 ### List Topics
 ```
-docker run --rm --network=host confluentinc/cp-kafka:7.3.5 /usr/bin/kafka-topics --list --bootstrap-server localhost:9092`
+docker run --rm --network=host confluentinc/cp-kafka:7.3.5 /usr/bin/kafka-topics --list --bootstrap-server localhost:9092
 ```
 
 ### Upload a single schema using Curl
@@ -112,7 +112,7 @@ curl -s http://localhost:8081/contexts | jq
 ```
 curl -s http://localhost:8081/subjects?subjectPrefix=":.my-context:" | jq
 [
-  ":.my-context:subject1"
+  ":.my-context:subject2"
 ]
 ```
 
@@ -121,8 +121,9 @@ curl -s http://localhost:8081/subjects?subjectPrefix=":.my-context:" | jq
 ```
 curl -s http://localhost:8081/subjects?subjectPrefix=":*:" | jq
 [
-  ":.my-context:subject1",
+  ":.my-context:subject2",
   "subject1",
+  "subject2",
   "subject3"
 ]
 ```

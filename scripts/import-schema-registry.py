@@ -17,7 +17,7 @@ def put_subject_into_mode(url, username, password, subject, mode, indent = ""):
     data = {
         "mode": mode
     }
-    response = requests.put(mode_url, auth=(username, password), headers={"Content-Type": "application/json"}, json=data)
+    response = requests.put(mode_url, auth=(username, password), headers={"Content-Type": "application/vnd.schemaregistry.v1+json"}, json=data)
     if response.status_code == 200:
         print(f"{indent}Subject: {subject} is now in {mode} mode")
         return True
@@ -25,13 +25,13 @@ def put_subject_into_mode(url, username, password, subject, mode, indent = ""):
         print(f"{indent}Unable to put Subject: {subject} into mode {mode}")
         return False
 
-def send_schema_to_registry(url, username, password, subject, payload_data):
-    headers = {"Content-Type": "application/vnd.schemaregistry.v1+json"}
-   
-    print(payload_data)
-    #TODO: Complete this
-
-
+def send_schema_to_registry(url, username, password, subject, payload_data):   
+    subject_url = f"{url}/subjects/{subject}/versions"
+    response = requests.post(subject_url, auth=(username, password), headers={"Content-Type": "application/vnd.schemaregistry.v1+json"}, json=payload_data)
+    if response.status_code == 200:
+        return "IMPORTED"
+    else:
+        return response.content
 
 def get_subject_paths(directory):
     fully_qualified_subjects = set()
@@ -59,52 +59,48 @@ def get_subjects_by_subject_path(subject_paths, import_context):
 
 def get_existing_subjects(url, username=None, password=None):
     api_url = f"{url}/subjects"
-    auth = None
-
-    if username and password:
-        auth = (username, password)
-
-    response = requests.get(api_url, auth=auth)
+    response = requests.get(api_url, auth = (username, password))
     if response.status_code == 200:
         subjects = response.json()
         return subjects
     else:
-        print(f"Failed to retrieve subjects. Status code: {response.status_code}")
-        return None
+        print(f"Failed to retrieve subjects. Status code: {response.status_code}. Please verify your connection details")
+        sys.exit(1)
 
 def get_existing_contexts(url, username=None, password=None):
     api_url = f"{url}/contexts"
-    auth = None
-    response = requests.get(api_url, auth=auth)
+    response = requests.get(api_url, auth=(username, password))
+    
     if response.status_code == 200:
-        subjects = response.json()
-        return subjects
+        contexts = response.json()
+        cleaned_contexts = [context.lstrip('.') for context in contexts]
+        return cleaned_contexts
     else:
         print(f"Failed to retrieve contexts. Status code: {response.status_code}")
         return None
 
 def process_subject(url, username, password, subject_path, subject, indent = ""):
+    version_results = {}
     print(f"{indent}Attempting to put {subject} into IMPORT mode")
     if put_subject_into_mode(url, username, password, subject, "IMPORT", indent):
         for filename in sorted(os.listdir(subject_path)):
             full_path = os.path.join(subject_path, filename)
             if (os.path.isfile(full_path)):
                 print(f"{indent}\t- Processing file {full_path}")
-                payload_data = json.dumps(read_schema_from_file(full_path))
-                send_schema_to_registry(url, username, password, subject, payload_data)    
-    
+                payload_data = read_schema_from_file(full_path)
+                version = payload_data["version"]
+                version_results[str(version)] = send_schema_to_registry(url, username, password, subject, payload_data)    
         put_subject_into_mode(url, username, password, subject, "READWRITE", indent)
-        return "IMPORTED"
     else:
         print(f"{indent}*** Unable to put subject {subject} into IMPORT mode. Not importing this subject ***")
-        return "FAILED"
+        version_results["*"] = "FAILED"
+    return version_results
 
 def process_subjects(url, username, password, subjects_by_path):
     print("\n- Processing Subjects")
     results = {}
     for subject_path, subject in subjects_by_path.items():
         indent = "\t"
-    
         print(f"{indent}Processing Subject {subject} with path {subject_path}")
         results[subject] = process_subject(url, username, password, subject_path, subject, f"{indent}\t")
         print("\n")
@@ -114,6 +110,7 @@ def import_schemas_to_registry(url, username, password, import_folder, import_co
     subject_paths = get_subject_paths(os.path.join(import_folder))
     subjects_by_path = get_subjects_by_subject_path(subject_paths, import_context)
     results = process_subjects(url, username, password, subjects_by_path)
+    print(f"Import Results: \n{results}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Schema Import Script")

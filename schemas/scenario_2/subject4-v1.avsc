@@ -1,0 +1,9 @@
+{
+   "type" : "record",
+   "namespace" : "example",
+   "name" : "Schema4",
+   "fields" : [
+      { "name" : "schema4Name" , "type" : "string" },
+      { "name" : "schema4Age" , "type" : "int" }
+   ]
+}

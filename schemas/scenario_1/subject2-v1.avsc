@@ -1,9 +1,9 @@
 {
    "type" : "record",
    "namespace" : "example",
-   "name" : "Schema1",
+   "name" : "Schema2",
    "fields" : [
-      { "name" : "name" , "type" : "string" },
-      { "name" : "age" , "type" : "int" }
+      { "name" : "schema2Name" , "type" : "string" },
+      { "name" : "schema2Age" , "type" : "int" }
    ]
 }

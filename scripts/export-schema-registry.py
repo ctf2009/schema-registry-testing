@@ -70,12 +70,6 @@ if __name__ == "__main__":
     export_folder = args.export_folder
     insecure = args.insecure
 
-    print(url)
-    print(username)
-    print(password)
-    print(export_folder)
-    print(insecure)
-
     if insecure:
         requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
         ssl_verification=False

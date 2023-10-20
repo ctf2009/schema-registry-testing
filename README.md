@@ -50,7 +50,7 @@ Uploading schema for subject: subject3 from file schemas/subject3-v2.avsc
 ### Export the schemas with Ids and versions from Schema Registry 1
 From the root of this repository you can run
 ```
-python scripts/export-schema-registry.py http://localhost:8081
+python scripts/export-schema-registry.py --url http://localhost:8081
 ```
 
 The above command will create a folder named `export` and export all schemas to folders within it by subject name
@@ -143,7 +143,7 @@ When you provide a context, the imported schemas are placed into their own 'name
 ### Export the schemas with ids and versions from Schema Registry 1
 From the root of this repository you can run
 ```
-python scripts/export-schema-registry.py http://localhost:8081
+python scripts/export-schema-registry.py --url http://localhost:8081
 ```
 
 The above command will create a folder named `export` and export all schemas to folders within it by subject name

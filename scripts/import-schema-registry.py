@@ -2,8 +2,10 @@ import requests
 import sys
 import os
 import json
-import re
 import argparse
+from urllib3.exceptions import InsecureRequestWarning
+
+ssl_verification=True
 
 def read_schema_from_file(file_path):
     with open(file_path, 'r') as file:
@@ -17,7 +19,7 @@ def put_subject_into_mode(url, username, password, subject, mode, indent = ""):
     data = {
         "mode": mode
     }
-    response = requests.put(mode_url, auth=(username, password), headers={"Content-Type": "application/vnd.schemaregistry.v1+json"}, json=data)
+    response = requests.put(mode_url, auth=(username, password), headers={"Content-Type": "application/vnd.schemaregistry.v1+json"}, json=data, verify=ssl_verification)
     if response.status_code == 200:
         print(f"{indent}Subject: {subject} is now in {mode} mode")
         return True
@@ -27,7 +29,7 @@ def put_subject_into_mode(url, username, password, subject, mode, indent = ""):
 
 def send_schema_to_registry(url, username, password, subject, payload_data):   
     subject_url = f"{url}/subjects/{subject}/versions"
-    response = requests.post(subject_url, auth=(username, password), headers={"Content-Type": "application/vnd.schemaregistry.v1+json"}, json=payload_data)
+    response = requests.post(subject_url, auth=(username, password), headers={"Content-Type": "application/vnd.schemaregistry.v1+json"}, json=payload_data, verify=ssl_verification)
     if response.status_code == 200:
         return "IMPORTED"
     else:
@@ -59,7 +61,7 @@ def get_subjects_by_subject_path(subject_paths, import_context):
 
 def get_existing_subjects(url, username=None, password=None):
     api_url = f"{url}/subjects"
-    response = requests.get(api_url, auth = (username, password))
+    response = requests.get(api_url, auth = (username, password), verify=ssl_verification)
     if response.status_code == 200:
         subjects = response.json()
         return subjects
@@ -69,7 +71,7 @@ def get_existing_subjects(url, username=None, password=None):
 
 def get_existing_contexts(url, username=None, password=None):
     api_url = f"{url}/contexts"
-    response = requests.get(api_url, auth=(username, password))
+    response = requests.get(api_url, auth=(username, password), verify=ssl_verification)
     
     if response.status_code == 200:
         contexts = response.json()
@@ -119,6 +121,7 @@ if __name__ == "__main__":
     parser.add_argument("--password", help="Password for authentication [Optional]")
     parser.add_argument("--import-folder", required=True, help="Folder containing schemas to import")
     parser.add_argument("--import-context", help="Provide a context for the imported schemas")
+    parser.add_argument("--insecure", action='store_true', help="Provide this flag is you want do not want to use SSL Verification")
 
     args = parser.parse_args()
     url = args.url
@@ -126,6 +129,11 @@ if __name__ == "__main__":
     password = args.password
     import_folder = args.import_folder
     import_context = args.import_context
+    insecure = args.insecure
+
+    if insecure:
+        requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+        ssl_verification=False
 
     existing_subjects = get_existing_subjects(url, username, password)
     if existing_subjects and import_context == None:

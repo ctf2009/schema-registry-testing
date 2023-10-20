@@ -2,6 +2,10 @@ import requests
 import sys
 import os
 import re
+import argparse
+from urllib3.exceptions import InsecureRequestWarning
+
+ssl_verification=True
 
 def get_subjects_list(url, username=None, password=None):
     api_url = f"{url}/subjects"
@@ -10,7 +14,7 @@ def get_subjects_list(url, username=None, password=None):
     if username and password:
         auth = (username, password)
 
-    response = requests.get(api_url, auth=auth)
+    response = requests.get(api_url, auth=auth, verify=ssl_verification)
 
     if response.status_code == 200:
         subjects = response.json()
@@ -52,19 +56,29 @@ def build_subject_folder_name(export_folder, subject):
         return  os.path.join(export_folder, "default", base_subject)
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2 or len(sys.argv) > 5:
-        print("Usage: python script.py <URL> [username] [password] [--export <export_folder>]")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Schema Export Script")
+    parser.add_argument("--url", required=True, help="URL of the registry")
+    parser.add_argument("--username", help="Username for authentication [Optional]")
+    parser.add_argument("--password", help="Password for authentication [Optional]")
+    parser.add_argument("--export-folder", default="export", help="Folder to export schemas to")
+    parser.add_argument("--insecure", action='store_true', help="Provide this flag is you want do not want to use SSL Verification")
 
-    url = sys.argv[1]
-    username = sys.argv[2] if len(sys.argv) >= 3 else None
-    password = sys.argv[3] if len(sys.argv) >= 4 else None
-    export_folder = "export"
+    args = parser.parse_args()
+    url = args.url
+    username = args.username
+    password = args.password
+    export_folder = args.export_folder
+    insecure = args.insecure
 
-    if "--export" in sys.argv:
-        export_index = sys.argv.index("--export")
-        if export_index + 1 < len(sys.argv):
-            export_folder = sys.argv[export_index + 1]
+    print(url)
+    print(username)
+    print(password)
+    print(export_folder)
+    print(insecure)
+
+    if insecure:
+        requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
+        ssl_verification=False
 
     subjects = get_subjects_list(url, username, password)
     print(f"There are {len(subjects)} subjects: {subjects}")
@@ -73,7 +87,7 @@ if __name__ == "__main__":
         for subject in subjects:
             print(f"\nProcessing subject: {subject}")
             versions_url = f"{url}/subjects/{subject}/versions"
-            versions_response = requests.get(versions_url, auth=(username, password))
+            versions_response = requests.get(versions_url, auth=(username, password), verify=ssl_verification)
 
             if versions_response.status_code == 200:
                 versions = versions_response.json()
@@ -81,7 +95,7 @@ if __name__ == "__main__":
  
                 for version in versions:
                     schema_url = f"{url}/subjects/{subject}/versions/{version}" 
-                    schema_response = requests.get(schema_url, auth=(username, password))
+                    schema_response = requests.get(schema_url, auth=(username, password), verify=ssl_verification)
                     if schema_response.status_code == 200:
                         schema = schema_response.text
                         filepath = os.path.join(build_subject_folder_name(export_folder, subject), f"{version}.json")
